@@ -14,6 +14,10 @@ import android.nfc.Tag;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.TextView;
+
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -93,6 +97,34 @@ public class MainActivity extends AppCompatActivity {
 
                     Log.d("NFC", "出勤: " + userId + " 時刻: " + time);
                     txtResult.setText("出勤しました\n" + time);
+
+                    new Thread(() -> {
+                        try {
+                            URL url = new URL("http://192.168.0.5:3000/attendance");
+                            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
+                            conn.setRequestMethod("POST");
+                            conn.setRequestProperty("Content-Type", "application/json");
+                            conn.setDoOutput(true);
+
+                            String json = "{"
+                                    + "\"userId\":\"" + userId + "\","
+                                    + "\"type\":\"" + mode + "\","
+                                    + "\"time\":\"" + time + "\""
+                                    + "}";
+
+                            OutputStream os = conn.getOutputStream();
+                            os.write(json.getBytes());
+                            os.flush();
+                            os.close();
+
+                            int responseCode = conn.getResponseCode();
+                            Log.d("API", "Response: " + responseCode);
+
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }).start();
                 }
 
             } else if (mode.equals("OUT")) {
@@ -110,23 +142,52 @@ public class MainActivity extends AppCompatActivity {
                     Log.d("NFC", "退勤: " + userId + " 時刻: " + time);
                     txtResult.setText("退勤しました\n" + time);
 
+                        new Thread(() -> {
+                            try {
+                                URL url = new URL("http://192.168.0.5:3000/attendance");
+                                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
+                                conn.setRequestMethod("POST");
+                                conn.setRequestProperty("Content-Type", "application/json");
+                                conn.setDoOutput(true);
+
+                                String json = "{"
+                                        + "\"userId\":\"" + userId + "\","
+                                        + "\"type\":\"" + mode + "\","
+                                        + "\"time\":\"" + time + "\""
+                                        + "}";
+
+                                OutputStream os = conn.getOutputStream();
+                                os.write(json.getBytes());
+                                os.flush();
+                                os.close();
+
+                                int responseCode = conn.getResponseCode();
+                                Log.d("API", "Response: " + responseCode);
+
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }).start();
+                    }
                 }
             }
-        }    }
-
-    @Override
-    protected void onNewIntent(Intent intent) {
-        super.onNewIntent(intent);
-        setIntent(intent);
-        handleNfcIntent(intent);
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-
-        if (nfcAdapter != null) {
-            nfcAdapter.disableForegroundDispatch(this);
         }
-    }
+
+
+    @Override
+        protected void onNewIntent(Intent intent) {
+            super.onNewIntent(intent);
+            setIntent(intent);
+            handleNfcIntent(intent);
+        }
+
+    @Override
+        protected void onPause() {
+            super.onPause();
+
+            if (nfcAdapter != null) {
+                nfcAdapter.disableForegroundDispatch(this);
+            }
+        }
 }
